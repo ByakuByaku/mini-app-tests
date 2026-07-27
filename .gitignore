@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+build/
+.vscode/
+.idea/
+.claude/
+.windsurf/
+.agents/
+skills-lock.json
+scripts

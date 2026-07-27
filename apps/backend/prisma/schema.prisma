@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  FINISHED
+  EXPIRED
+}
+
+model User{
+  id String @id @default(uuid())
+  telegramId BigInt @unique
+  username String? @unique
+  fullName String
+  role Role @default(STUDENT)
+  createdAt DateTime @default(now())
+
+  attempts TestAttempt[]
+  createdTests Test[]
+}
+
+model Test{
+  id String @id @default(uuid())
+  Title String
+  Description String?
+  isActive Boolean @default(true)
+  timeLimitSec Int?
+  createdBy User @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt DateTime @default(now())
+
+  Questions Question[]
+  attempts  TestAttempt[]
+}
+
+model Question{
+  id String @id @default(uuid())
+  TestId String
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId String
+  Type QuestionType @default(SINGLE_CHOICE)
+  orderNum Int
+
+  options AnswerOption[]
+  answers UserAnswer[]
+}
+
+model AnswerOption{
+  id String @id @default(uuid())
+  QuestionId String
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
+  text String
+  isCorrect Boolean @default(false)
+  orderNum Int
+}
+
+model UserAnswer{
+  id String @id @default(uuid())
+  attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  attemptId String
+  questionId String
+  question Question @relation(fields: [questionId], references: [id])
+  selectedOptionId String[]
+  isCorrect Boolean @default(false)
+
+  @@unique([attemptId, questionId])
+}
+
+model TestAttempt{
+  id String @id @default(uuid())
+  user User @relation(fields: [userId], references: [id])
+  userId String
+  test Test @relation(fields: [testId], references: [id])
+  testId String
+  status AttemptStatus @default(IN_PROGRESS)
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  score Int? @default(0)
+  maxScore Int? @default(0)
+
+  answers UserAnswer[]
+}

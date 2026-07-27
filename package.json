@@ -1,0 +1,8 @@
+{
+  "name": "mini-app-tests",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
