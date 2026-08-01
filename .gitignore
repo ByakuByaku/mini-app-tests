@@ -11,3 +11,4 @@ build/
 .agents/
 skills-lock.json
 scripts
+.env.example

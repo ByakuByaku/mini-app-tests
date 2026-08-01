@@ -143,7 +143,8 @@ export async function startAttempt(userId: string, testId: string) {
   }
 
   const existing = await db.testAttempt.findFirst({
-    where: { userId, testId, status: 'IN_PROGRESS' },
+    where: { userId, testId },
+    orderBy: { startedAt: 'desc' },
   });
 
   if (existing) {
@@ -151,7 +152,8 @@ export async function startAttempt(userId: string, testId: string) {
     if (attempt.status === 'IN_PROGRESS') {
       return serializeAttempt(attempt);
     }
-    // Просроченная закрыта — создаём новую ниже
+
+    throw new AttemptError('Тест уже был пройден', 400);
   }
 
   const attempt = await db.testAttempt.create({
@@ -244,6 +246,7 @@ export async function getAttemptResult(attemptId: string, userId: string) {
       isCorrect: answer.isCorrect,
       question: {
         id: answer.question.id,
+        title: answer.question.title,
         type: answer.question.Type,
         orderNum: answer.question.orderNum,
         options: answer.question.options.map((option) => ({

@@ -1,0 +1,183 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #111827;
+  background: #f6f7fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f6f7fb;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0 20px;
+}
+
+.nav a {
+  text-decoration: none;
+  color: #374151;
+  font-weight: 600;
+}
+
+.nav a.active {
+  color: #2563eb;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card,
+.test-card {
+  background: #fff;
+  border: 1px solid #dbe2f0;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.test-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.test-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.question-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.question-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.option-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.option-row input[type='text'],
+.option-row input[type='radio'],
+.option-row input[type='checkbox'] {
+  width: auto;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+}
+
+textarea {
+  min-height: 80px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  background: #e5e7eb;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+button.secondary {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.progress-track {
+  height: 12px;
+  background: #dbeafe;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2563eb;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.option.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.badge {
+  margin-left: 8px;
+  font-size: 12px;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  border-radius: 999px;
+  padding: 2px 8px;
+}

@@ -57,21 +57,33 @@ export async function upsertFromTelegram(
 ): Promise<AuthUser> {
   const fullName = `${tgUser.first_name} ${tgUser.last_name ?? ''}`.trim();
 
-  const user = await db.user.upsert({
-    where: { telegramId: BigInt(tgUser.id) },
-    update: {
-      username: tgUser.username,
-      fullName,
-    },
-    create: {
-      telegramId: BigInt(tgUser.id),
-      username: tgUser.username,
-      fullName,
-      role: 'STUDENT',
-    },
-  });
+  try {
+    const user = await db.user.upsert({
+      where: { telegramId: BigInt(tgUser.id) },
+      update: {
+        username: tgUser.username,
+        fullName,
+      },
+      create: {
+        telegramId: BigInt(tgUser.id),
+        username: tgUser.username,
+        fullName,
+        role: 'STUDENT',
+      },
+    });
 
-  return toAuthUser(user);
+    return toAuthUser(user);
+  } catch (err: any) {
+    console.error('!!! UPSERT FAILED !!!');
+    console.error('CODE:', err?.code);
+    console.error('MESSAGE:', err?.message);
+    console.error('META:', JSON.stringify(err?.meta, null, 2));
+    console.error('PATH:', err?.path);
+    console.error('SYSCALL:', err?.syscall);
+    console.error('ERRNO:', err?.errno);
+    console.error('FULL ERROR OBJECT:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+    throw err;
+  }
 }
 
 export async function listUsers(): Promise<PublicUser[]> {
