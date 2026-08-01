@@ -51,9 +51,9 @@ model Test{
 
 model Question{
   id String @id @default(uuid())
-  TestId String
   test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
   testId String
+  title String
   Type QuestionType @default(SINGLE_CHOICE)
   orderNum Int
 

@@ -50,6 +50,7 @@ function toStudentDetail(test: TestWithQuestions): TestDetailDto {
     timeLimitSec: test.timeLimitSec,
     questions: test.Questions.map((question) => ({
       id: question.id,
+      title: question.title,
       type: question.Type as QuestionType,
       orderNum: question.orderNum,
       options: question.options.map((option) => ({
@@ -71,6 +72,7 @@ function toAdminDetail(test: TestWithQuestions): AdminTestDetailDto {
     createdAt: test.createdAt.toISOString(),
     questions: test.Questions.map((question) => ({
       id: question.id,
+      title: question.title,
       type: question.Type as QuestionType,
       orderNum: question.orderNum,
       options: question.options.map((option) => ({
@@ -91,8 +93,8 @@ async function createQuestions(
   for (const question of questions) {
     const createdQuestion = await tx.question.create({
       data: {
-        TestId: testId,
         testId,
+        title: question.title,
         Type: question.type,
         orderNum: question.orderNum,
       },

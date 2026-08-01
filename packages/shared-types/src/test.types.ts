@@ -9,6 +9,7 @@ export interface AnswerOptionDto {
 
 export interface QuestionDto {
   id: string;
+  title: string;
   type: QuestionType;
   orderNum: number;
   options: AnswerOptionDto[];
@@ -39,6 +40,7 @@ export interface AdminAnswerOptionDto extends AnswerOptionDto {
 
 export interface AdminQuestionDto {
   id: string;
+  title: string;
   type: QuestionType;
   orderNum: number;
   options: AdminAnswerOptionDto[];
@@ -71,6 +73,7 @@ export interface CreateAnswerOptionInput {
 }
 
 export interface CreateQuestionInput {
+  title: string;
   type: QuestionType;
   orderNum: number;
   options: CreateAnswerOptionInput[];

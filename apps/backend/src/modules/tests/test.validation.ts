@@ -10,6 +10,7 @@ export const createAnswerOptionSchema = z.object({
 
 export const createQuestionSchema = z
   .object({
+    title: z.string().trim().min(1, 'Название вопроса обязательно').max(500),
     type: questionTypeSchema,
     orderNum: z.number().int().min(0),
     options: z.array(createAnswerOptionSchema).min(2, 'Минимум 2 варианта ответа'),
