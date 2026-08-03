@@ -7,6 +7,7 @@ import { findUserById } from './modules/users/user.service';
 import testRoutes from './modules/tests/test.routes';
 import testAdminRoutes from './modules/tests/test.admin.routes';
 import { attemptRouter } from './modules/attempts/attempt.routes';
+import attemptAdminRoutes from './modules/attempts/attempt.admin.routes';
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -25,6 +26,7 @@ app.get('/api/admin/ping', telegramAuthMiddleware, requireAdmin, (_req, res) => 
 
 app.use('/api/tests', telegramAuthMiddleware, testRoutes);
 app.use('/api/admin/tests', telegramAuthMiddleware, requireAdmin, testAdminRoutes);
+app.use('/api/admin/attempts', telegramAuthMiddleware, requireAdmin, attemptAdminRoutes);
 app.use('/api', attemptRouter);
 
 app.listen(port, () => console.log(`Backend running on port ${port}`));

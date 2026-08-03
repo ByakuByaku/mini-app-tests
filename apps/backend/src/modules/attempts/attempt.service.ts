@@ -1,6 +1,26 @@
 import type { AttemptStatus, TestAttempt } from '../../generated/prisma/client';
 import { db } from '../../db/client';
 
+export type AdminAttemptListItem = {
+  id: string;
+  userId: string;
+  testId: string;
+  status: AttemptStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  score: number | null;
+  maxScore: number | null;
+  user: {
+    id: string;
+    fullName: string;
+    username: string | null;
+  };
+  test: {
+    id: string;
+    title: string;
+  };
+};
+
 export class AttemptError extends Error {
   constructor(
     message: string,
@@ -22,6 +42,47 @@ function serializeAttempt(attempt: TestAttempt) {
     score: attempt.score,
     maxScore: attempt.maxScore,
   };
+}
+
+export async function listAdminAttempts(): Promise<AdminAttemptListItem[]> {
+  const attempts = await db.testAttempt.findMany({
+    orderBy: { startedAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          username: true,
+        },
+      },
+      test: {
+        select: {
+          id: true,
+          Title: true,
+        },
+      },
+    },
+  });
+
+  return attempts.map((attempt) => ({
+    id: attempt.id,
+    userId: attempt.userId,
+    testId: attempt.testId,
+    status: attempt.status,
+    startedAt: attempt.startedAt.toISOString(),
+    finishedAt: attempt.finishedAt?.toISOString() ?? null,
+    score: attempt.score,
+    maxScore: attempt.maxScore,
+    user: {
+      id: attempt.user.id,
+      fullName: attempt.user.fullName,
+      username: attempt.user.username,
+    },
+    test: {
+      id: attempt.test.id,
+      title: attempt.test.Title,
+    },
+  }));
 }
 
 function isTimeExpired(startedAt: Date, timeLimitSec: number | null | undefined): boolean {

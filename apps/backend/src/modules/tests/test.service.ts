@@ -186,6 +186,14 @@ export async function updateTest(
 
   const test = await db.$transaction(async (tx) => {
     if (input.questions) {
+      await tx.userAnswer.deleteMany({
+        where: {
+          question: {
+            testId: id,
+          },
+        },
+      });
+
       await tx.question.deleteMany({ where: { testId: id } });
     }
 
