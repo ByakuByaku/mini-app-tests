@@ -64,6 +64,26 @@ export type AttemptDto = {
   maxScore: number | null;
 };
 
+export type AdminAttemptListItemDto = {
+  id: string;
+  userId: string;
+  testId: string;
+  status: AttemptDto['status'];
+  startedAt: string;
+  finishedAt: string | null;
+  score: number | null;
+  maxScore: number | null;
+  user: {
+    id: string;
+    fullName: string;
+    username: string | null;
+  };
+  test: {
+    id: string;
+    title: string;
+  };
+};
+
 export type AttemptResultDto = {
   id: string;
   testId: string;
@@ -99,6 +119,7 @@ export const api = {
   getTests: () => request<{ tests: TestListItemDto[] }>('/api/tests'),
 
   getAdminTests: () => request<{ tests: AdminTestListItemDto[] }>('/api/admin/tests'),
+  getAdminAttempts: () => request<{ attempts: AdminAttemptListItemDto[] }>('/api/admin/attempts'),
 
   getTest: (testId: string) =>
     request<{ test: TestDetailDto }>(`/api/tests/${testId}`),

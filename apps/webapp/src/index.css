@@ -99,7 +99,23 @@ select {
 .option-row {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.timer-box {
+  align-self: flex-start;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #1d4ed8;
 }
 
 .option-row input[type='text'],
@@ -160,12 +176,23 @@ button.secondary {
 }
 
 .option {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: flex-start;
   gap: 10px;
+  width: 100%;
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: 10px;
+}
+
+.option input {
+  margin-top: 3px;
+}
+
+.option span {
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 .option.selected {

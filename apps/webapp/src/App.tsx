@@ -57,7 +57,7 @@ function AppShell() {
 
       <nav className="nav">
         <NavLink to="/" end>
-          Тесты
+          Все тесты
         </NavLink>
         {isAdmin && <NavLink to="/admin">Админ</NavLink>}
       </nav>

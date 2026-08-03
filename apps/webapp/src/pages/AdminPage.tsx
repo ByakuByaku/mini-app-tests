@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AdminTestListItemDto, CreateTestInput } from 'shared-types';
-import { api } from '../api/client';
+import { api, type AdminAttemptListItemDto } from '../api/client';
 
 type QuestionDraft = {
   title: string;
@@ -26,6 +26,9 @@ export function AdminPage() {
   const [isActive, setIsActive] = useState(true);
   const [timeLimitSec, setTimeLimitSec] = useState<number | ''>('');
   const [questions, setQuestions] = useState<QuestionDraft[]>([createEmptyQuestion(0)]);
+  const [editingTestId, setEditingTestId] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState<AdminAttemptListItemDto[]>([]);
+  const [activeTab, setActiveTab] = useState<'tests' | 'attempts'>('tests');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -48,8 +51,18 @@ export function AdminPage() {
     }
   }
 
+  async function loadAttempts() {
+    try {
+      const data = await api.getAdminAttempts();
+      setAttempts(data.attempts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка загрузки попыток');
+    }
+  }
+
   useEffect(() => {
     void loadTests();
+    void loadAttempts();
   }, []);
 
   function addQuestion() {
@@ -149,7 +162,43 @@ export function AdminPage() {
     return null;
   }
 
-  async function handleCreate() {
+  function resetForm() {
+    setTitle('');
+    setDescription('');
+    setIsActive(true);
+    setTimeLimitSec('');
+    setQuestions([createEmptyQuestion(0)]);
+    setEditingTestId(null);
+  }
+
+  async function beginEdit(test: AdminTestListItemDto) {
+    try {
+      const data = await api.getAdminTest(test.id);
+      const detail = data.test;
+
+      setEditingTestId(detail.id);
+      setTitle(detail.title);
+      setDescription(detail.description ?? '');
+      setIsActive(detail.isActive);
+      setTimeLimitSec(detail.timeLimitSec ?? '');
+      setQuestions(
+        detail.questions.map((question, questionIndex) => ({
+          title: question.title,
+          type: question.type,
+          orderNum: questionIndex,
+          options: question.options.map((option, optionIndex) => ({
+            text: option.text,
+            isCorrect: option.isCorrect,
+            orderNum: optionIndex,
+          })),
+        }))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось загрузить тест для редактирования');
+    }
+  }
+
+  async function handleSave() {
     const validationMessage = validateQuestions();
     if (!canSubmit) {
       setError('Заполните название теста, каждый вопрос и все варианты');
@@ -181,15 +230,21 @@ export function AdminPage() {
     };
 
     try {
-      await api.createTest(payload);
-      setTitle('');
-      setDescription('');
-      setIsActive(true);
-      setTimeLimitSec('');
-      setQuestions([createEmptyQuestion(0)]);
+      if (editingTestId) {
+        await api.updateTest(editingTestId, payload);
+      } else {
+        await api.createTest(payload);
+      }
+      resetForm();
       await loadTests();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось создать тест');
+      setError(
+        err instanceof Error
+          ? err.message
+          : editingTestId
+            ? 'Не удалось обновить тест'
+            : 'Не удалось создать тест'
+      );
     } finally {
       setSaving(false);
     }
@@ -208,8 +263,18 @@ export function AdminPage() {
     <div className="page">
       <h1>Админка</h1>
 
-      <div className="card stack">
-        <h2>Создать тест</h2>
+      <div className="tabs-row">
+        <button type="button" className={activeTab === 'tests' ? 'primary' : 'secondary'} onClick={() => setActiveTab('tests')}>
+          Тесты
+        </button>
+        <button type="button" className={activeTab === 'attempts' ? 'primary' : 'secondary'} onClick={() => setActiveTab('attempts')}>
+          Попытки и результаты
+        </button>
+      </div>
+
+      {activeTab === 'tests' && (
+        <div className="card stack">
+          <h2>Создать тест</h2>
 
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название теста" />
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание" />
@@ -304,27 +369,68 @@ export function AdminPage() {
           Добавить вопрос
         </button>
 
-        <button type="button" className="primary" onClick={() => void handleCreate()} disabled={!canSubmit || saving}>
-          {saving ? 'Создаём...' : 'Создать тест'}
-        </button>
-      </div>
+          <div className="actions-row">
+            <button type="button" className="primary" onClick={() => void handleSave()} disabled={!canSubmit || saving}>
+              {saving ? (editingTestId ? 'Сохраняем...' : 'Создаём...') : editingTestId ? 'Сохранить изменения' : 'Создать тест'}
+            </button>
+            {editingTestId && (
+              <button type="button" className="secondary" onClick={resetForm}>
+                Отмена
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'attempts' && (
+        <div className="card stack">
+          <h2>Попытки и результаты</h2>
+          {attempts.length === 0 ? (
+            <p className="muted">Пока нет попыток</p>
+          ) : (
+            <div className="stack">
+              {attempts.map((attempt) => (
+                <div key={attempt.id} className="card">
+                  <h3>{attempt.test.title}</h3>
+                  <p className="muted">
+                    Пользователь: {attempt.user.fullName || attempt.user.username || attempt.user.id}
+                  </p>
+                  <p className="muted">
+                    Статус: {attempt.status} · Балл: {attempt.score ?? 0}/{attempt.maxScore ?? 0}
+                  </p>
+                  <p className="muted">
+                    Начало: {new Date(attempt.startedAt).toLocaleString()} · Завершение: {attempt.finishedAt ? new Date(attempt.finishedAt).toLocaleString() : '—'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && <p className="error">{error}</p>}
 
-      <div className="stack">
-        {tests.map((test) => (
-          <div key={test.id} className="card">
-            <h3>{test.title}</h3>
-            <p>{test.description}</p>
-            <p className="muted">
-              {test.questionCount} вопросов · {test.isActive ? 'Активен' : 'Неактивен'}
-            </p>
-            <button type="button" onClick={() => void handleDelete(test.id)}>
-              Удалить
-            </button>
-          </div>
-        ))}
-      </div>
+      {activeTab === 'tests' && (
+        <div className="stack">
+          {tests.map((test) => (
+            <div key={test.id} className="card">
+              <h3>{test.title}</h3>
+              <p>{test.description}</p>
+              <p className="muted">
+                {test.questionCount} вопросов · {test.isActive ? 'Активен' : 'Неактивен'}
+              </p>
+              <div className="actions-row">
+                <button type="button" onClick={() => beginEdit(test)}>
+                  Редактировать
+                </button>
+                <button type="button" onClick={() => void handleDelete(test.id)}>
+                  Удалить
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

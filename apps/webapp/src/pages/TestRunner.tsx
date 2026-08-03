@@ -16,6 +16,9 @@ export function TestRunner() {
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [timeLimitSec, setTimeLimitSec] = useState<number | null>(null);
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [timeLeftSec, setTimeLeftSec] = useState<number | null>(null);
 
   useEffect(() => {
     if (!testId) return;
@@ -27,8 +30,11 @@ export function TestRunner() {
           api.getTest(testId!),
         ]);
         setAttemptId(attempt.id);
+        setStartedAt(new Date(attempt.startedAt));
         setTitle(test.title);
         setQuestions(test.questions);
+        setTimeLimitSec(test.timeLimitSec);
+        setTimeLeftSec(test.timeLimitSec);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ошибка загрузки');
       }
@@ -36,6 +42,25 @@ export function TestRunner() {
 
     void init();
   }, [testId]);
+
+  useEffect(() => {
+    if (!startedAt || timeLimitSec == null) return;
+
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000);
+      const next = Math.max(0, timeLimitSec - elapsed);
+      setTimeLeftSec(next);
+
+      if (next <= 0) {
+        void finishAttemptByTimeout();
+      }
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [startedAt, timeLimitSec]);
 
   const currentQuestion = questions[currentIdx];
 
@@ -50,6 +75,19 @@ export function TestRunner() {
       );
     }
     hapticFeedback.selectionChanged();
+  }
+
+  async function finishAttemptByTimeout() {
+    if (!attemptId) return;
+
+    try {
+      await api.finishAttempt(attemptId);
+      hapticFeedback.notificationOccurred('success');
+      navigate(`/result/${attemptId}`);
+    } catch (err) {
+      hapticFeedback.notificationOccurred('error');
+      setError(err instanceof Error ? err.message : 'Не удалось завершить попытку');
+    }
   }
 
   async function handleNext() {
@@ -98,6 +136,12 @@ export function TestRunner() {
       <p className="muted">
         {title} · вопрос {currentIdx + 1} из {questions.length}
       </p>
+
+      {timeLimitSec != null && timeLeftSec != null && (
+        <div className="timer-box">
+          <strong>Осталось:</strong> {Math.max(0, timeLeftSec)} сек
+        </div>
+      )}
 
       <h2>
         {currentQuestion.title}
