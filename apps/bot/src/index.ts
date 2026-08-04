@@ -10,7 +10,8 @@ const db = new PrismaClient({ adapter });
 
 
 const botToken = process.env.BOT_TOKEN;
-const miniAppUrl = process.env.MINI_APP_URL ?? 'http://localhost:5173';
+const miniAppUrl = process.env.MINI_APP_URL ?? 'http://localhost:5174';
+console.log(miniAppUrl)
 
 if (!botToken) {
   throw new Error('BOT_TOKEN not set. Add it to apps/bot/.env or parent env file.');
@@ -19,26 +20,54 @@ if (!botToken) {
 const bot = new TelegramBot(botToken, { polling: true });
 const ADMIN_TELEGRAM_ID = Number(process.env.ADMIN_TELEGRAM_ID);
 
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
+const awaitingName = new Set<number>();
 
-  await bot.sendMessage(chatId, 'Привет! Открой мини‑апп и пройди тесты.', {
+async function sendWebAppButton(chatId: number) {
+  await bot.sendMessage(chatId, 'Нажми кнопку, чтобы открыть тесты:', {
     reply_markup: {
-      keyboard: [
+      inline_keyboard: [
         [
           {
-            text: 'Открыть мини‑апп',
+            text: 'Открыть тесты',
             web_app: {
               url: miniAppUrl,
             },
           },
         ],
       ],
-      resize_keyboard: true,
     },
   });
+}
+
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const telegramId = BigInt(msg.from!.id);
+
+  const existingUser = await db.user.findUnique({
+    where: { telegramId },
+  });
+
+  if (!existingUser) {
+    awaitingName.add(chatId);
+
+    await bot.sendMessage(
+      chatId,
+      'Привет! Для начала напиши своё ФИО полностью (например: Иванов Иван Иванович)'
+    );
+
+    return;
+  }
+
+  await sendWebAppButton(chatId);
 });
 
+bot.onText(/\/rename/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  awaitingName.add(chatId);
+
+  await bot.sendMessage(chatId, 'Напиши своё ФИО заново:');
+});
 
 bot.onText(/\/broadcast (.+)/, async (msg, match) => {
   if (msg.from?.id !== ADMIN_TELEGRAM_ID) {
@@ -62,6 +91,47 @@ bot.onText(/\/broadcast (.+)/, async (msg, match) => {
 
   await bot.sendMessage(msg.chat.id, `Рассылка завершена. Отправлено: ${sent}/${users.length}`);
 });
+
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+
+  if (msg.text?.startsWith('/')) return;
+  if (!awaitingName.has(chatId)) return;
+
+  const fullName = msg.text?.trim();
+
+  if (!fullName || fullName.length < 5) {
+    await bot.sendMessage(
+      chatId,
+      'Пожалуйста, напиши ФИО полностью, например: Иванов Иван Иванович'
+    );
+    return;
+  }
+
+  const telegramId = BigInt(msg.from!.id);
+  const tgUser = msg.from!;
+
+  await db.user.upsert({
+    where: { telegramId },
+    update: {
+      fullName,
+      username: tgUser.username,
+    },
+    create: {
+      telegramId,
+      username: tgUser.username,
+      fullName,
+      role: 'STUDENT',
+    },
+  });
+
+  awaitingName.delete(chatId);
+
+  await bot.sendMessage(chatId, `Спасибо, ${fullName}! Теперь можешь пройти тест.`);
+
+  await sendWebAppButton(chatId);
+});
+
 
 bot.on('polling_error', (error) => {
   console.error('Telegram polling error:', error);

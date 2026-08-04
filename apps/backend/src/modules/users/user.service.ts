@@ -62,7 +62,6 @@ export async function upsertFromTelegram(
       where: { telegramId: BigInt(tgUser.id) },
       update: {
         username: tgUser.username,
-        fullName,
       },
       create: {
         telegramId: BigInt(tgUser.id),
