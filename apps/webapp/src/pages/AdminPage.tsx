@@ -31,6 +31,8 @@ export function AdminPage() {
   const [activeTab, setActiveTab] = useState<'tests' | 'attempts'>('tests');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
     if (!title.trim()) return false;
@@ -41,6 +43,60 @@ export function AdminPage() {
       return question.options.every((option) => option.text.trim());
     });
   }, [questions, title]);
+
+  const uniqueUsers = useMemo(() => {
+  const map = new Map<
+    string,
+    {
+      id: string;
+      label: string;
+    }
+  >();
+
+  attempts.forEach((attempt) => {
+    if (!map.has(attempt.user.id)) {
+      map.set(attempt.user.id, {
+        id: attempt.user.id,
+        label:
+          attempt.user.fullName ||
+          attempt.user.username ||
+          attempt.user.id,
+      });
+    }
+  });
+
+  return Array.from(map.values()).sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
+  }, [attempts]);
+
+  const matchingUsers = useMemo(() => {
+  if (!userSearch.trim()) {
+    return [];
+  }
+
+  const query = userSearch.toLowerCase();
+
+  return uniqueUsers.filter((user) =>
+    user.label.toLowerCase().includes(query)
+  );
+  }, [uniqueUsers, userSearch]);
+
+  const filteredAttempts = useMemo(() => {
+  if (!selectedUserId) {
+    return attempts;
+  }
+
+  return attempts.filter(
+    (attempt) => attempt.user.id === selectedUserId
+  );
+  }, [attempts, selectedUserId]);
+
+  const selectedUser = useMemo(
+  () => uniqueUsers.find((u) => u.id === selectedUserId),
+  [uniqueUsers, selectedUserId]
+  );
+
 
   async function loadTests() {
     try {
@@ -385,11 +441,58 @@ export function AdminPage() {
       {activeTab === 'attempts' && (
         <div className="card stack">
           <h2>Попытки и результаты</h2>
+          <div style={{ position: 'relative' }}>
+            <input
+              value={selectedUser ? selectedUser.label : userSearch}
+              onChange={(e) => {
+                setUserSearch(e.target.value);
+                setSelectedUserId(null);
+              }}
+              placeholder="Поиск участника..."
+            />
+            {selectedUserId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUserId(null);
+                  setUserSearch('');
+                }}
+              >
+                Показать всех
+              </button>
+            )}
+            {!selectedUserId && userSearch && matchingUsers.length > 0 && (
+              <div
+                className="card"
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  zIndex: 10,
+                }}
+              >
+                {matchingUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => {
+                      setSelectedUserId(user.id);
+                      setUserSearch('');
+                    }}
+                    style={{
+                      padding: 8,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {user.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {attempts.length === 0 ? (
             <p className="muted">Пока нет попыток</p>
           ) : (
             <div className="stack">
-              {attempts.map((attempt) => (
+              {filteredAttempts.map((attempt) => (
                 <div key={attempt.id} className="card">
                   <h3>{attempt.test.title}</h3>
                   <p className="muted">
