@@ -253,6 +253,14 @@ export function AdminPage() {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить тест для редактирования');
     }
   }
+  async function handleExport() {
+  try {
+    await api.downloadResults();
+    alert('Excel-файл отправлен вам в Telegram');
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Ошибка экспорта');
+  }
+  }
 
   async function handleSave() {
     const validationMessage = validateQuestions();
@@ -441,6 +449,15 @@ export function AdminPage() {
       {activeTab === 'attempts' && (
         <div className="card stack">
           <h2>Попытки и результаты</h2>
+          <div className="actions-row">
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => void handleExport()}
+            >
+              📊 Скачать Excel
+            </button>
+          </div>
           <div style={{ position: 'relative' }}>
             <input
               value={selectedUser ? selectedUser.label : userSearch}

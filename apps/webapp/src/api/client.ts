@@ -120,6 +120,19 @@ export const api = {
 
   getAdminTests: () => request<{ tests: AdminTestListItemDto[] }>('/api/admin/tests'),
   getAdminAttempts: () => request<{ attempts: AdminAttemptListItemDto[] }>('/api/admin/attempts'),
+  downloadResults: async () => {
+  const res = await fetch(`${BASE_URL}/api/admin/attempts/export`, {
+    method: 'GET',
+    headers: {
+      'x-telegram-init-data': getInitData(),
+    },
+  });
+  
+  if (!res.ok) {
+    throw new Error('Ошибка экспорта');
+  }
+  return res.json();
+  },
 
   getTest: (testId: string) =>
     request<{ test: TestDetailDto }>(`/api/tests/${testId}`),
