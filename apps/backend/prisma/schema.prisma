@@ -23,11 +23,21 @@ enum AttemptStatus {
   EXPIRED
 }
 
+enum OnboardingStep {
+  AWAITING_NAME
+  AWAITING_INSTITUTE
+  AWAITING_STUDENT_ID
+  COMPLETED
+}
+
 model User{
   id String @id @default(uuid())
   telegramId BigInt @unique
   username String? @unique
   fullName String
+  institute String?
+  studentId String? @unique
+  onboardingStep OnboardingStep @default(AWAITING_NAME)
   role Role @default(STUDENT)
   createdAt DateTime @default(now())
 

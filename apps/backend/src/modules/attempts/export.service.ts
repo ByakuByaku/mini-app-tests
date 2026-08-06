@@ -9,13 +9,23 @@ export async function exportAttempts(telegramId: string) {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Результаты');
     const testTitles = [...new Set(attempts.map((a) => a.test.title))];
+    const testMaxScores = new Map<string, number>();
+
+    for (const attempt of attempts) {
+      const current = testMaxScores.get(attempt.test.title) ?? 0;
+      testMaxScores.set(
+        attempt.test.title,
+        Math.max(current, attempt.maxScore ?? 0)
+      );
+    }
     const users = new Map<
     string,
     {
       fullName: string;
+      institute: string | null;
+      studentId: string | null;
       tests: Record<string, string>;
       totalScore: number;
-      totalMaxScore: number;
     }
     >();
     for (const attempt of attempts) {
@@ -24,23 +34,24 @@ export async function exportAttempts(telegramId: string) {
     if (!users.has(userKey)) {
       users.set(userKey, {
         fullName: attempt.user.fullName,
+        institute: attempt.user.institute,
+        studentId: attempt.user.studentId,
         tests: {},
         totalScore: 0,
-        totalMaxScore: 0,
       });
     }
     const user = users.get(userKey)!;
 
     const score = attempt.score ?? 0;
     const maxScore = attempt.maxScore ?? 0;
-
     user.tests[attempt.test.title] = `${score}/${maxScore}`;
     user.totalScore += score;
-    user.totalMaxScore += maxScore;
   }
 
   sheet.addRow([
     'ФИО',
+    'Институт',
+    '№ студенческого билета',
     ...testTitles,
     'Сумма',
     'Процент',
@@ -49,15 +60,20 @@ export async function exportAttempts(telegramId: string) {
   sheet.getRow(1).font = {
     bold: true,
   };
-
+  const overallMaxScore = Array.from(testMaxScores.values()).reduce(
+    (sum, value) => sum + value,
+    0
+  );
   for (const user of users.values()) {
     sheet.addRow([
       user.fullName,
+      user.institute ?? '—',
+      user.studentId ?? '—',
       ...testTitles.map((title) => user.tests[title] ?? '—'),
-      `${user.totalScore}/${user.totalMaxScore}`,
-      user.totalMaxScore === 0
+      `${user.totalScore}/${overallMaxScore}`,
+      overallMaxScore === 0
         ? '0%'
-        : `${Math.round((user.totalScore / user.totalMaxScore) * 100)}%`,
+        : `${Math.round((user.totalScore / overallMaxScore) * 100)}%`,
     ]);
   }
 

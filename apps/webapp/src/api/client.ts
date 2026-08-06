@@ -40,7 +40,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       const body = (await res.json()) as { error?: string };
       if (body.error) message = body.error;
     } catch {
-      // ignore
     }
     throw new ApiError(message, res.status);
   }
@@ -77,6 +76,8 @@ export type AdminAttemptListItemDto = {
     id: string;
     fullName: string;
     username: string | null;
+    institute: string | null;
+    studentIdCard: string | null;
   };
   test: {
     id: string;

@@ -14,6 +14,8 @@ export type AdminAttemptListItem = {
     id: string;
     fullName: string;
     username: string | null;
+    institute: string | null;
+    studentId: string | null;
   };
   test: {
     id: string;
@@ -53,6 +55,8 @@ export async function listAdminAttempts(): Promise<AdminAttemptListItem[]> {
           id: true,
           fullName: true,
           username: true,
+          institute: true,
+          studentId: true
         },
       },
       test: {
@@ -77,6 +81,8 @@ export async function listAdminAttempts(): Promise<AdminAttemptListItem[]> {
       id: attempt.user.id,
       fullName: attempt.user.fullName,
       username: attempt.user.username,
+      institute: attempt.user.institute,
+      studentId: attempt.user.studentId
     },
     test: {
       id: attempt.test.id,
