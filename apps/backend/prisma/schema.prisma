@@ -86,7 +86,7 @@ model UserAnswer{
   attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   attemptId String
   questionId String
-  question Question @relation(fields: [questionId], references: [id])
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   selectedOptionId String[]
   isCorrect Boolean @default(false)
 
